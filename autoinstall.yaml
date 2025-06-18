@@ -7,7 +7,7 @@ autoinstall:
   locale: en_US.UTF-8
   keyboard:
     layout: br
-    variant: ""
+  timezone: "America/Maceio"  
   storage:
     layout:
       name: lvm
