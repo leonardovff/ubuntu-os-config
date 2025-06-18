@@ -66,13 +66,20 @@ autoinstall:
         mountpoint: /home
   packages:
     - curl
+    - wget
     - build-essential
     - git
-    - gh         # GitHub CLI
-    - code       # VS Code
+    - gh
+    - code
+    - libreoffice
   snaps:
     - name: docker
       classic: true
+  codecs:
+      install: true
+  drivers:
+      install: true
+  updates: all
   late-commands:
     # Install Pixi via the official script
     - curtin in-target --target=/target bash -xc "curl -fsSL https://pixi.sh/install.sh | bash"
