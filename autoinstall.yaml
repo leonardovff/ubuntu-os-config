@@ -72,6 +72,9 @@ autoinstall:
     - gh
     - code
     - libreoffice
+    - apt-transport-https
+    - ca-certificates
+    - software-properties-common
   snaps:
     - name: docker
       classic: true
@@ -81,27 +84,41 @@ autoinstall:
       install: true
   updates: all
   late-commands:
+    # Prepare Docker directory in /home
+    - curtin in-target --target=/target bash -xc "mkdir -p /home/lvff/docker"
+
+    # Move existing Snap Docker data (if any) and bind-mount it
+    - curtin in-target --target=/target bash -xc "if [ -d /var/snap/docker/common/var-lib-docker ]; then mv /var/snap/docker/common/var-lib-docker/* /home/lvff/docker/ || true; fi"
+    - curtin in-target --target=/target bash -xc "mkdir -p /var/snap/docker/common"
+    - curtin in-target --target=/target bash -xc "echo '/home/lvff/docker /var/snap/docker/common/var-lib-docker none bind 0 0' >> /etc/fstab"
+    - curtin in-target --target=/target bash -xc "mkdir -p /var/snap/docker/common/var-lib-docker"
+    - curtin in-target --target=/target bash -xc "mount /var/snap/docker/common/var-lib-docker"
+
     # Install nvm
     - curtin in-target --target=/target bash -xc "curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"
-    - curtin in-target --target=/target bash -xc "chown -R dev:dev /home/dev/.nvm"
+    - curtin in-target --target=/target bash -xc "chown -R lvff:lvff /home/dev/.nvm"
     - curtin in-target --target=/target bash -xc "echo 'export NVM_DIR=\"$HOME/.nvm\"' >> /home/dev/.bashrc"
     - curtin in-target --target=/target bash -xc "echo '[ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"' >> /home/dev/.bashrc"
     - curtin in-target --target=/target bash -xc "echo '[ -s \"$NVM_DIR/bash_completion\" ] && . \"$NVM_DIR/bash_completion\"' >> /home/dev/.bashrc"
+    
     # Install Node 20 using nvm
     - curtin in-target --target=/target su - dev -c "bash -lc 'export NVM_DIR=\"$HOME/.nvm\" && . \"$NVM_DIR/nvm.sh\" && nvm install 20 && nvm alias default 20'"
     # Upgrade npm for Node 20
     - curtin in-target --target=/target su - dev -c "bash -lc 'npm install -g npm@latest'"
     # Install pnpm globally via npm
     - curtin in-target --target=/target su - dev -c "bash -lc 'npm install -g pnpm@latest'"
+    
     # Install Pixi via the official script
     - curtin in-target --target=/target bash -xc "curl -fsSL https://pixi.sh/install.sh | bash"
     # Fix ownership of Pixi in /home/dev/.pixi
-    # - curtin in-target --target=/target bash -xc "chown -R lvff:lvff /home/dev/.pixi"
+    - curtin in-target --target=/target bash -xc "chown -R lvff:lvff /home/dev/.pixi"
     # Enable Pixi Bash completion
     - curtin in-target --target=/target bash -xc "echo 'eval \"\$(/home/dev/.pixi/bin/pixi completion --shell bash)\"' >> /home/dev/.bashrc"
     # Install global tools via Pixi, including pnpm
     - curtin in-target --target=/target bash -xc "su - dev -c 'export PATH=\$HOME/.pixi/bin:\$PATH && pixi global install python python3'"
+    
     # Install Brave browser
     - curtin in-target --target=/target bash -xc "curl -fsS https://dl.brave.com/install.sh | sh"
+    
     # Install VS Code extensions  
     - curtin in-target --target=/target bash -xc "code --install-extension editorconfig.editorconfig"
