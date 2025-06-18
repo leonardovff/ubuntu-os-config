@@ -11,6 +11,59 @@ autoinstall:
   storage:
     layout:
       name: lvm
+      password: "ENCRYPTION_PASSPHRASE_HERE"
+    config:
+      - id: disk0
+        type: disk
+        match:
+          size: largest
+        ptable: gpt
+        wipe: superblock-recursive
+
+      - id: efi
+        type: partition
+        device: disk0
+        size: 250MiB
+        flag: boot
+        grub_device: true
+
+      - id: pvpart
+        type: partition
+        device: disk0
+        size: -1
+
+      - id: pvcrypt
+        type: dm_crypt
+        volume: pvpart
+        key: "ENCRYPTION_PASSPHRASE_HERE"
+
+      - id: lvm_vg
+        type: lvm_vg
+        devices: [pvcrypt]
+        name: vgubuntu
+
+      - id: lv_root
+        type: lvm_lv
+        vg: lvm_vg
+        name: root
+        size: 50GiB
+        fstype: ext4
+        mountpoint: /
+
+      - id: lv_swap
+        type: lvm_lv
+        vg: lvm_vg
+        name: swap
+        size: 70GiB
+        fstype: swap
+
+      - id: lv_home
+        type: lvm_lv
+        vg: lvm_vg
+        name: home
+        size: -1
+        fstype: ext4
+        mountpoint: /home
   packages:
     - curl
     - build-essential
